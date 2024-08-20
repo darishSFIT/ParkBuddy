@@ -1,7 +1,9 @@
 # ParkBuddy
+
+# `LimitedComponts.ino` is currently the main file! 
+
 ### Semester 7 IOT project using NodeMCU (ESP8266) board 
 
-## ```LimitedComponts.ino``` is currently the **main** file! 
 
 # Parking Spot Monitoring System
 
