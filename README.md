@@ -1,7 +1,7 @@
 # ParkBuddy
 ### Semester 7 IOT project using NodeMCU (ESP8266) board 
 
-#### We used IR sensors to dectect slot occupancy
+## ```LimitedComponts.ino``` is currently the **main** file! 
 
 # Parking Spot Monitoring System
 
