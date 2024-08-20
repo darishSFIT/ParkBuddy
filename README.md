@@ -124,3 +124,123 @@ void loop() {
   delay(5000); // Update every 5 seconds.
 }
 ```
+
+Certainly! Here’s a markdown-style `README.md` with explanations for the important lines of code:
+
+```markdown
+# Parking Spot Monitoring System
+
+This project uses an ESP8266 microcontroller to monitor parking spot occupancy and control a gate with a servo motor. Data is sent to Firebase Realtime Database.
+
+## Key Components
+
+- **ESP8266 Microcontroller**
+- **IR Sensors**
+- **Servo Motor (SG90)**
+- **LED Lights (Temporary)**
+- **Firebase Realtime Database**
+
+## Code Explanation
+
+### Libraries
+
+```cpp
+#include <ESP8266WiFi.h>              // Library for ESP8266 Wi-Fi functionality.
+#include <ESP8266Firebase.h>          // Library for Firebase Realtime Database integration.
+#include <Servo.h>                    // Library for controlling the servo motor.
+```
+
+- **`ESP8266WiFi.h`:** Manages Wi-Fi connections.
+- **`ESP8266Firebase.h`:** Integrates with Firebase.
+- **`Servo.h`:** Controls the servo motor.
+
+### Wi-Fi and Firebase Configuration
+
+```cpp
+#define _SSID "Pixel 7A"              // Wi-Fi network SSID.
+#define _PASSWORD "87654321"          // Wi-Fi network password.
+#define REFERENCE_URL "https://parkbuddy-653a1-default-rtdb.firebaseio.com"  // Firebase Realtime Database URL.
+
+Firebase firebase(REFERENCE_URL);      // Initialize Firebase with the database URL.
+Servo gateServo;                      // Create a Servo object for the gate.
+```
+
+- **`_SSID` and `_PASSWORD`:** Your Wi-Fi credentials.
+- **`REFERENCE_URL`:** URL for your Firebase Realtime Database.
+- **`Firebase firebase(REFERENCE_URL);`:** Initializes Firebase.
+- **`Servo gateServo;`:** Creates a servo object for gate control.
+
+### Setup Function
+
+```cpp
+void setup() {
+  Serial.begin(115200);                // Start serial communication at 115200 baud rate.
+  
+  WiFi.mode(WIFI_STA);                 // Set Wi-Fi mode to Station (client).
+  WiFi.disconnect();                  // Disconnect from any previous Wi-Fi connections.
+  WiFi.begin(_SSID, _PASSWORD);      // Connect to Wi-Fi network.
+
+  while (WiFi.status() != WL_CONNECTED) { // Wait until connected to Wi-Fi.
+    delay(500);
+  }
+
+  Serial.print("IP Address: ");
+  Serial.println(WiFi.localIP());     // Print the ESP8266's local IP address.
+
+  gateServo.attach(D0);               // Attach the servo to pin D0.
+  gateServo.write(0);                 // Initialize servo position (closed gate).
+
+  // Test Firebase operations
+  firebase.setString("Example/setString", "It's Working");   // Set a test string value in Firebase.
+  firebase.setInt("Example/setInt", 123);                    // Set a test integer value in Firebase.
+  firebase.setFloat("Example/setFloat", 45.32);              // Set a test float value in Firebase.
+}
+```
+
+- **`Serial.begin(115200);`:** Initializes serial communication.
+- **`WiFi.begin(_SSID, _PASSWORD);`:** Connects to the Wi-Fi network.
+- **`WiFi.status()`:** Checks the connection status.
+- **`gateServo.attach(D0);`:** Connects the servo motor to pin D0.
+- **`firebase.setString()`, `firebase.setInt()`, `firebase.setFloat()`:** Example Firebase operations to set data.
+
+### Loop Function
+
+```cpp
+void loop() {
+  bool isSlot1Occupied = (digitalRead(D2) == LOW); // Read parking spot status from IR sensor.
+
+  if (digitalRead(D1) == LOW) {  // Check if gate IR sensor detects an object.
+    gateServo.write(90);                 // Open the gate.
+    delay(5000);                         // Keep the gate open for 5 seconds.
+    gateServo.write(0);                  // Close the gate.
+  }
+
+  // Update LEDs based on parking spot status
+  if (isSlot1Occupied) {
+    digitalWrite(D5, LOW);   // Turn off red LED (slot occupied).
+    digitalWrite(D6, HIGH);  // Turn on green LED (slot occupied).
+    firebase.setString("parking_spot/slot1/status", "occupied"); // Update Firebase with status.
+  } else {
+    digitalWrite(D5, HIGH);  // Turn on red LED (slot empty).
+    digitalWrite(D6, LOW);   // Turn off green LED (slot empty).
+    firebase.setString("parking_spot/slot1/status", "empty"); // Update Firebase with status.
+  }
+
+  delay(5000); // Delay to avoid frequent updates to Firebase.
+}
+```
+
+- **`digitalRead(D2)`:** Reads the status of the parking spot sensor.
+- **`gateServo.write(90)`:** Opens the gate.
+- **`firebase.setString()`:** Updates Firebase with the parking spot status.
+- **`digitalWrite(D5)` and `digitalWrite(D6)`:** Control LEDs based on the parking spot status.
+
+## Important Notes
+
+- Ensure your Firebase project’s rules are set to allow read and write operations. 
+- Modify the Wi-Fi and Firebase credentials with your own details.
+
+For more details, visit the [ESP8266Firebase GitHub repository](https://github.com/Rupakpoddar/ESP8266Firebase).
+```
+
+This `README.md` provides explanations for key parts of the code to help understand its functionality and configuration.
