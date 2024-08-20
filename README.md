@@ -1,13 +1,6 @@
-# ParkBuddy
+# ParkBuddy (`LimitedComponts.ino` is currently the main file!)
 
-# `LimitedComponts.ino` is currently the main file! 
-
-### Semester 7 IOT project using NodeMCU (ESP8266) board 
-
-
-# Parking Spot Monitoring System
-
-This project uses an ESP8266 microcontroller to monitor a parking spot's occupancy status and control a gate using a servo motor. The data is sent to Firebase Realtime Database, and the system includes indicators (LEDs) to show the status of the parking spot.
+#### This project uses an ESP8266 microcontroller to monitor a parking spot's occupancy status and control a gate using a servo motor. The data is sent to Firebase Realtime Database, and the system includes indicators (LEDs) to show the status of the parking spot.
 
 ## Libraries
 
@@ -132,7 +125,7 @@ For more details, visit the [ESP8266Firebase GitHub repository](https://github.c
 #include <Servo.h>                    // Include the Servo library for controlling the servo motor.
 
 // Firebase configuration
-#define _SSID "Pixel 7A"              // Your Wi-Fi SSID
+#define _SSID "Pixel 7a"              // Your Wi-Fi SSID i.e. mobile hotspot
 #define _PASSWORD "87654321"          // Your Wi-Fi Password
 #define REFERENCE_URL "https://parkbuddy-653a1-default-rtdb.firebaseio.com"  // Firebase project URL
 
