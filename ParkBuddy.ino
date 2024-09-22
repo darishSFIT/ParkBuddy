@@ -54,12 +54,11 @@ void setup() {
 }
 
 void loop() {
-  checkGate();     // Check and update the gate status
   checkSlots();    // Check and update all parking slots simultaneously
-  updateGate();    // Update gate movement without blocking
-  
+  checkGate();     // Check and update the gate status
+
   //separator
-  Serial.println("___________"); 
+  Serial.println("-----------"); 
 }
 
 
@@ -89,56 +88,93 @@ void updateSlotStatus(int slotNumber, bool isOccupied) {
 }
 
 
-
-// Function to check the gate IR sensor
+// Function to check the gate IR sensor status
 void checkGate() {
   if (digitalRead(GATE_IR_PIN) == LOW) { // Assuming LOW means object detected
-    if (!isGateOpening && gateAngle == 80) {  // Prevent reopening while already opening/fully opened
-      Serial.println("Gate opened");
-      firebase.setString("parking_space/gate/status", "Gate opened");
-      openGate();
-    }
+    Serial.println("Gate opened");
+    firebase.setString("parking_space/gate/status", "Gate opened");
+    openGate();
   } else {
-    if (!isGateClosing && gateAngle == 0) {  // Prevent closing while already closing/fully closed
-      Serial.println("Gate closed");
-      firebase.setString("parking_space/gate/status", "Gate closed");
-      closeGate();
-    }
+    Serial.println("Gate closed");
+    firebase.setString("parking_space/gate/status", "Gate closed");
+    closeGate();
   }
 }
 
-// Non-blocking function to open the gate
 void openGate() {
-  isGateOpening = true;
-  isGateClosing = false;
-}
-
-// Non-blocking function to close the gate
-void closeGate() {
-  isGateClosing = true;
-  isGateOpening = false;
-}
-
-// Function to gradually move the gate
-void updateGate() {
-  unsigned long currentMillis = millis();
-  
-  if (currentMillis - previousMillis >= gateInterval) {
-    previousMillis = currentMillis;
-
-    if (isGateOpening && gateAngle > 0) {
-      gateAngle--;
-      gateServo.write(gateAngle);
-      if (gateAngle == 0) {
-        isGateOpening = false; // Stop opening when fully opened
-      }
-    } 
-    else if (isGateClosing && gateAngle < 80) {
-      gateAngle++;
-      gateServo.write(gateAngle);
-      if (gateAngle == 80) {
-        isGateClosing = false; // Stop closing when fully closed
-      }
-    }
+  for (int angle = 80; angle >= 0; angle--) {
+    gateServo.write(angle);
+    delay(10); // Open gate slowly
   }
 }
+
+// Function to close the gate
+void closeGate() {
+  for (int angle = 0; angle <= 80; angle++) {
+    gateServo.write(angle);
+    delay(10); // Close gate slowly
+  }
+}
+
+
+
+
+
+//Parallel gate opening attempt
+
+//// Function to check the gate IR sensor
+//void checkGateParallel() {
+//  if (digitalRead(GATE_IR_PIN) == LOW) { // Assuming LOW means object detected
+//    if (!isGateOpening && gateAngle == 0) {  // Prevent reopening while already fully closed
+//      Serial.println("Gate opening...");
+//      firebase.setString("parking_space/gate/status", "Gate opening");
+//      openGate();
+//    }
+//  } else {
+//    if (!isGateClosing && gateAngle == 80) {  // Prevent closing while already fully opened
+//      Serial.println("Gate closing...");
+//      firebase.setString("parking_space/gate/status", "Gate closing");
+//      closeGate();
+//    }
+//  }
+//}
+//
+//// Non-blocking function to open the gate
+//void openGateParallel() {
+//  isGateOpening = true;
+//  isGateClosing = false;
+//}
+//
+//// Non-blocking function to close the gate
+//void closeGateParallel() {
+//  isGateClosing = true;
+//  isGateOpening = false;
+//}
+//
+//// Function to gradually move the gate
+//void updateGateParallel() {
+//  unsigned long currentMillis = millis();
+//  
+//  if (currentMillis - previousMillis >= gateInterval) {
+//    previousMillis = currentMillis;
+//
+//    if (isGateOpening && gateAngle < 80) {
+//      gateAngle++;
+//      gateServo.write(gateAngle);
+//      if (gateAngle == 80) {
+//        isGateOpening = false; // Stop opening when fully opened
+//        firebase.setString("parking_space/gate/status", "Gate fully open");
+//        Serial.println("Gate fully opened");
+//      }
+//    } 
+//    else if (isGateClosing && gateAngle > 0) {
+//      gateAngle--;
+//      gateServo.write(gateAngle);
+//      if (gateAngle == 0) {
+//        isGateClosing = false; // Stop closing when fully closed
+//        firebase.setString("parking_space/gate/status", "Gate fully closed");
+//        Serial.println("Gate fully closed");
+//      }
+//    }
+//  }
+//}
