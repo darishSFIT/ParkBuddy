@@ -30,9 +30,9 @@
 ### Wi-Fi and Firebase Configuration
 
 ```cpp
-#define _SSID "Pixel 7A"              // Wi-Fi network SSID.
-#define _PASSWORD "87654321"          // Wi-Fi network password.
-#define REFERENCE_URL "https://parkbuddy-653a1-default-rtdb.firebaseio.com"  // Firebase Realtime Database URL.
+#define _SSID "your_hotspot_ssid"              // Wi-Fi network SSID.
+#define _PASSWORD "password"          // Wi-Fi network password.
+#define REFERENCE_URL "https://your-firebase-db-default-rtdb.firebaseio.com"  // Firebase Realtime Database URL.
 
 Firebase firebase(REFERENCE_URL);      // Initialize Firebase with the database URL.
 Servo gateServo;                      // Create a Servo object for the gate.
