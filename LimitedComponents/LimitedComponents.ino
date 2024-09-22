@@ -88,10 +88,10 @@ void loop() {
 
 
     //close gate slowly
-    delay(2000);
+//    delay(2000);
     for (int angle = 0; angle <= 80; angle++) {
       gateServo.write(angle);
-      delay(40);
+      delay(4);
     }
 
     
@@ -140,5 +140,5 @@ void loop() {
   Serial.println("-----------");
 
   // Delay to avoid flooding the Firebase database with updates
-  delay(5000); // Update every 5 seconds
+//  delay(5000); // Update every 5 seconds
 }
