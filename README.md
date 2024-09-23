@@ -1,4 +1,4 @@
-# ParkBuddy (`LimitedComponts.ino` is currently the main file!)
+# [ParkBuddy](https://darishsfit.github.io/parkbuddy.github.io/) 
 
 #### This project uses an ESP8266 microcontroller to monitor a parking spot's occupancy status and control a gate using a servo motor. The data is sent to Firebase Realtime Database, and the system includes indicators (LEDs) to show the status of the parking spot.
 
@@ -45,69 +45,12 @@ Servo gateServo;                      // Create a Servo object for the gate.
 
 ### Setup Function
 
-```cpp
-void setup() {
-  Serial.begin(115200);                // Start serial communication at 115200 baud rate.
-  
-  WiFi.mode(WIFI_STA);                 // Set Wi-Fi mode to Station (client).
-  WiFi.disconnect();                  // Disconnect from any previous Wi-Fi connections.
-  WiFi.begin(_SSID, _PASSWORD);      // Connect to Wi-Fi network.
-
-  while (WiFi.status() != WL_CONNECTED) { // Wait until connected to Wi-Fi.
-    delay(500);
-  }
-
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());     // Print the ESP8266's local IP address.
-
-  gateServo.attach(D0);               // Attach the servo to pin D0.
-  gateServo.write(0);                 // Initialize servo position (closed gate).
-
-  // Test Firebase operations
-  firebase.setString("Example/setString", "It's Working");   // Set a test string value in Firebase.
-  firebase.setInt("Example/setInt", 123);                    // Set a test integer value in Firebase.
-  firebase.setFloat("Example/setFloat", 45.32);              // Set a test float value in Firebase.
-}
-```
-
 - **`Serial.begin(115200);`:** Initializes serial communication.
 - **`WiFi.begin(_SSID, _PASSWORD);`:** Connects to the Wi-Fi network.
 - **`WiFi.status()`:** Checks the connection status.
 - **`gateServo.attach(D0);`:** Connects the servo motor to pin D0.
 - **`firebase.setString()`, `firebase.setInt()`, `firebase.setFloat()`:** Example Firebase operations to set data.
-
-### Loop Function
-
-```cpp
-void loop() {
-  bool isSlot1Occupied = (digitalRead(D2) == LOW); // Read parking spot status from IR sensor.
-
-  if (digitalRead(D1) == LOW) {  // Check if gate IR sensor detects an object.
-    gateServo.write(90);                 // Open the gate.
-    delay(5000);                         // Keep the gate open for 5 seconds.
-    gateServo.write(0);                  // Close the gate.
-  }
-
-  // Update LEDs based on parking spot status
-  if (isSlot1Occupied) {
-    digitalWrite(D5, LOW);   // Turn off red LED (slot occupied).
-    digitalWrite(D6, HIGH);  // Turn on green LED (slot occupied).
-    firebase.setString("parking_spot/slot1/status", "occupied"); // Update Firebase with status.
-  } else {
-    digitalWrite(D5, HIGH);  // Turn on red LED (slot empty).
-    digitalWrite(D6, LOW);   // Turn off green LED (slot empty).
-    firebase.setString("parking_spot/slot1/status", "empty"); // Update Firebase with status.
-  }
-
-  delay(5000); // Delay to avoid frequent updates to Firebase.
-}
-```
-
-- **`digitalRead(D2)`:** Reads the status of the parking spot sensor.
-- **`gateServo.write(90)`:** Opens the gate.
-- **`firebase.setString()`:** Updates Firebase with the parking spot status.
-- **`digitalWrite(D5)` and `digitalWrite(D6)`:** Control LEDs based on the parking spot status.
-
+  
 ## Important Notes
 
 - Ensure your Firebase project’s rules are set to allow read and write operations. 
@@ -117,106 +60,78 @@ For more details, visit the [ESP8266Firebase GitHub repository](https://github.c
 
 ----
 
-## Code Explanation
+# NodeMCU (ESP8266)
 
-```cpp
-#include <ESP8266WiFi.h>              // Include the ESP8266 Wi-Fi library for network communication.
-#include <ESP8266Firebase.h>          // Include the Firebase library for interaction with Firebase.
-#include <Servo.h>                    // Include the Servo library for controlling the servo motor.
+**How does it work?**
+The NodeMCU is a low-cost microcontroller that integrates the ESP8266 chip. It operates through Wi-Fi, allowing you to easily create IoT projects. It supports GPIO (General Purpose Input Output) pins for sensors, actuators, and communication protocols like I2C and SPI.
 
-// Firebase configuration
-#define _SSID "Pixel 7a"              // Your Wi-Fi SSID i.e. mobile hotspot
-#define _PASSWORD "87654321"          // Your Wi-Fi Password
-#define REFERENCE_URL "https://parkbuddy-653a1-default-rtdb.firebaseio.com"  // Firebase project URL
+**Technical Specifications**
+ - Pin count: 11 GPIO pins
+ - Clock speed: 80 MHz (can go up to 160 MHz)
+ - Memory: 64 KB instruction RAM, 96 KB data RAM, and 4 MB flash storage
+ - Operating voltage: 3.3V
+ - Wi-Fi: 802.11 b/g/n support with WPA/WPA2 security
+ - ADC: 10-bit Analog to Digital Converter (ADC) with one input pin (A0)
+ - Communication interfaces: UART, SPI, I2C
 
-// Define pin numbers
-#define GATE_IR_PIN D1                 // Gate IR sensor connected to pin D1
-#define SLOT1_IR_PIN D2                // Parking spot 1 IR sensor connected to pin D2
-#define SLOT1_RED_LED_PIN D5           // Red LED for slot 1 connected to pin D5
-#define SLOT1_GREEN_LED_PIN D6         // Green LED for slot 1 connected to pin D6
-#define SERVO_PIN D0                   // Servo motor connected to pin D0
+**Specific Features**
+ - Built-in Wi-Fi connectivity
+ - Power-saving modes for efficient energy consumption (deep sleep mode)
+ - Supports Lua and Arduino IDE for easy programming
 
-// Initialize Firebase
-Firebase firebase(REFERENCE_URL);       // Create a Firebase instance with the database URL.
-Servo gateServo;                        // Create a Servo instance for controlling the gate.
+**Common Features**
+ - USB to serial interface
+ - Onboard LEDs for power and status indication
+ - Integrated voltage regulator (5V to 3.3V)
 
-void setup() {
-  Serial.begin(115200);                   // Initialize serial communication at 115200 baud.
-  
-  // Initialize LED and servo pins
-  pinMode(LED_BUILTIN, OUTPUT);           // Set the built-in LED pin as an output.
-  pinMode(SLOT1_RED_LED_PIN, OUTPUT);     // Set the red LED pin as an output.
-  pinMode(SLOT1_GREEN_LED_PIN, OUTPUT);   // Set the green LED pin as an output.
+----
 
-  // Setup Wi-Fi connection
-  WiFi.mode(WIFI_STA);                    // Set Wi-Fi mode to station.
-  WiFi.disconnect();                      // Disconnect from any previous Wi-Fi connections.
-  delay(1000);                            // Wait for 1 second.
-  Serial.print("Connecting to: ");
-  Serial.println(_SSID);                    // Print the SSID being connected to.
-  WiFi.begin(_SSID, _PASSWORD);             // Begin the Wi-Fi connection.
+# IR Sensor
 
-  while (WiFi.status() != WL_CONNECTED) {   // Wait until connected to Wi-Fi.
-    delay(500);
-    Serial.print(".");
-  }
+**How does it detect object?** <br>
+The IR sensor uses an infrared LED to emit light, and a photodiode to detect the reflection of that light. When an object is in proximity, the reflected light is detected by the photodiode, indicating the presence of the object.
 
-  Serial.println("WiFi Connected");   // Print a message when connected to Wi-Fi.
-  Serial.print("IP Address: ");
-  Serial.println(WiFi.localIP());     // Print the local IP address of the ESP8266.
+**How does it adjust range?** <br>
+The range can be adjusted by turning the onboard potentiometer. Rotating the trimmer adjusts the sensitivity of the sensor’s digital output, allowing you to detect objects at different distances.
 
-  // Initialize the servo
-  gateServo.attach(SERVO_PIN);        // Attach the servo motor to the specified pin.
-  gateServo.write(0);                 // Set the initial position of the servo (closed gate).
+**Where can you use it?** <br>
+You can use this sensor for sensing black and white lines, suitable for making optical pattern projects and line following robots. Also, you can use this sensor to sense frequency of object. <br>
+Note: this sensor only works in DIGITAL mode. You can connect the digital output (DO) to sense. Adjust the potentiometer (a.k.a. trimmer) to set the digital output (DO) sensitivity.
 
-  // Firebase setup
-  firebase.setString("Example/setString", "It's Working");        // Set a test string value in Firebase.
-  firebase.setInt("Example/setInt", 123);                         // Set a test integer value in Firebase.
-  firebase.setFloat("Example/setFloat", 45.32);                   // Set a test float value in Firebase.
-  
-  firebase.pushString("push", "Hello");                           // Push a string value to Firebase.
-  firebase.pushInt("push", 789);                                  // Push an integer value to Firebase.
-  firebase.pushFloat("push", 89.54);                              // Push a float value to Firebase.
+**Specific Features**
+- Comes with a pair of 5mm infrared LED (emitter) and photodiode (receiver) work as reflect optical sensor
+- Wavelength : 940 nm
+- Output type : Digital (HIGH or LOW)
+- Model code : FC-51
 
-  // Retrieve and print data from Firebase
-  String data1 = firebase.getString("Example/setString");         // Get the string value from Firebase.
-  Serial.print("Received String: ");
-  Serial.println(data1);                                          // Print the received string value.
+**Common Features**
+- Logical IC : LM393
+- Operating voltage : 3.3 – 5V
+- Output current : ?15 mA
+- Adjustable sensitivity via potentiometer
+- Comes with LED indicators for POWER and OUTPUT
+- Fixed bolt holes for easy installation
 
-  int data2 = firebase.getInt("Example/setInt");                  // Get the integer value from Firebase.
-  Serial.print("Received Int: ");
-  Serial.println(data2);                                          // Print the received integer value.
+----
 
-  float data3 = firebase.getFloat("Example/setFloat");            // Get the float value from Firebase.
-  Serial.print("Received Float: ");
-  Serial.println(data3);                                          // Print the received float value.
+# Servo Motor (SG90)
+**How does it spin?** <br>
+The SG90 servo motor rotates between 0 to 180 degrees based on the PWM (Pulse Width Modulation) signal it receives. It can hold its position once set, making it ideal for tasks like controlling a gate or robotic arm.
 
-  firebase.deleteData("Example");                                 // Delete the test data from Firebase.
-}
+**How does it receive input?** <br>
+The servo receives input via the PWM signal sent to it from a microcontroller like the NodeMCU. The width of the pulse determines the angle of rotation. For instance, a 1 ms pulse moves the servo to 0°, while a 2 ms pulse moves it to 180°.
 
-void loop() {
-  // Variables to track parking spot status
-  bool isSlot1Occupied = (digitalRead(SLOT1_IR_PIN) == LOW); // Check if the parking spot is occupied by IR sensor.
+**Specific Features** <br>
+- Torque: 1.8 kg-cm at 4.8V
+- Speed: 0.1 sec/60° at 4.8V
+- Rotation range: 0° to 180°
+- Operating voltage: 4.8V to 6V
 
-  // Check gate IR sensor
-  if (digitalRead(GATE_IR_PIN) == LOW) {                          // If an object is detected by the gate IR sensor.
-    gateServo.write(90);                                          // Open the gate.
-    delay(5000);                                                  // Keep the gate open for 5 seconds.
-    gateServo.write(0);                                           // Close the gate.
-  }
+**Common Features** <br>
+- Dimensions: 22.2 x 11.8 x 31 mm
+- Weight: 9g
+- Includes mounting hardware and servo horns
+- Gear type: Plastic gears for lightweight applications
 
-  // Update LEDs based on parking spot status
-  if (isSlot1Occupied) {
-    digitalWrite(SLOT1_RED_LED_PIN, LOW);                         // Turn off the red LED if the slot is occupied.
-    digitalWrite(SLOT1_GREEN_LED_PIN, HIGH);                      // Turn on the green LED if the slot is occupied.
-    firebase.setString("parking_spot/slot1/status", "occupied");  // Update Firebase with the slot status.
-  } else {
-    digitalWrite(SLOT1_RED_LED_PIN, HIGH);                        // Turn on the red LED if the slot is empty.
-    digitalWrite(SLOT1_GREEN_LED_PIN, LOW);                       // Turn off the green LED if the slot is empty.
-    firebase.setString("parking_spot/slot1/status", "empty");     // Update Firebase with the slot status.
-  }
+----
 
-  // Delay to avoid flooding the Firebase database with updates
-  delay(5000); // Update every 5 seconds.
-}
-```
