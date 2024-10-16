@@ -52,8 +52,8 @@
     <script>
         // Sample admin credentials
         const adminCredentials = {
-            id: "admin123", // Replace with your actual admin ID
-            password: "password123" // Replace with your actual password
+            id: "darish", // Replace with your actual admin ID
+            password: "12345678" // Replace with your actual password
         };
 
         document.getElementById('login-btn').addEventListener('click', function() {
@@ -63,7 +63,7 @@
             // Check credentials
             if (enteredId === adminCredentials.id && enteredPassword === adminCredentials.password) {
                 // Redirect to admin page
-                window.location.href = 'admin.html';
+                window.location.href = 'index.html';
             } else {
                 alert("Invalid ID or Password. Please try again.");
             }
