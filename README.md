@@ -1,4 +1,6 @@
-# [ParkBuddy](https://darishsfit.github.io/parkbuddy.github.io/) 
+# [ParkBuddy App](https://darishsfit.github.io/parkbuddy.github.io/) 
+
+### [ParkBuddy App Source Repository](https://github.com/darishSFIT/parkbuddy.github.io)
 
 #### This project uses an ESP8266 microcontroller to monitor a parking spot's occupancy status and control a gate using a servo motor. The data is sent to Firebase Realtime Database, and the system includes indicators (LEDs) to show the status of the parking spot.
 
