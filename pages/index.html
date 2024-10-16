@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking Slot Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #191919;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #393939;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,h2 {
+            color: #e1e1e1;
+        }
+
+        .status {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+        }
+
+        .slot, .gate {
+            width: 150px;
+            padding: 20px;
+            margin-right: 5px;
+            border-radius: 10px;
+            background-color: #595959;
+        }
+
+        .slot h2, .gate h2 {
+            margin-bottom: 10px;
+        }
+
+        .status-box {
+            padding: 10px;
+            color: white;
+            border-radius: 5px;
+        }
+
+        .status-box.occupied {
+            background-color: #e74c3c;
+        }
+
+        .status-box.free {
+            background-color: #2ecc71;
+        }
+
+        .status-box.open {
+            background-color: #3498db;
+        }
+
+        .status-box.closed {
+            background-color: #95a5a6;
+        }
+        
+        .gate .status-box{
+            background-color: #3498db;
+        }
+    </style>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-database.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Parking Slot & Gate Status</h1>
+        <div class="status">
+            <div class="slot">
+                <h2>Slot 1</h2>
+                <div id="slot1-status" class="status-box">Loading...</div>
+            </div>
+            <div class="slot">
+                <h2>Slot 2</h2>
+                <div id="slot2-status" class="status-box">Loading...</div>
+            </div>
+            <div class="slot">
+                <h2>Slot 3</h2>
+                <div id="slot3-status" class="status-box">Loading...</div>
+            </div>
+            <div class="gate">
+                <h2>Gate</h2>
+                <div id="gate-status" class="status-box">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        var firebaseConfig = {
+            apiKey: "AIzaSyAKwQcf9dQcRsRCj43MPBod1GBXz4xvtJ8",
+            authDomain: "parkbuddy-653a1.firebaseapp.com",
+            databaseURL: "https://parkbuddy-653a1-default-rtdb.firebaseio.com",
+            projectId: "parkbuddy-653a1",
+            storageBucket: "parkbuddy-653a1.appspot.com",
+            messagingSenderId: "171935755007",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        var database = firebase.database();
+
+        // Fetch slot and gate status
+        function updateStatus(id, status) {
+            var element = document.getElementById(id);
+            element.textContent = status;
+
+            // Update class based on the status
+            if (status.toLowerCase() === "free" || status.toLowerCase() === "closed") {
+                element.classList.remove('occupied', 'open');
+                element.classList.add('free');
+            } else if (status.toLowerCase() === "parked" || status.toLowerCase() === "open") {
+                element.classList.remove('free', 'closed');
+                element.classList.add('occupied');
+            }
+        }
+
+        // Slot 1 status
+        database.ref("parking_space/slot1/status").on("value", function(snapshot) {
+            updateStatus("slot1-status", snapshot.val());
+        });
+
+        // Slot 2 status
+        database.ref("parking_space/slot2/status").on("value", function(snapshot) {
+            updateStatus("slot2-status", snapshot.val());
+        });
+
+        // Slot 3 status
+        database.ref("parking_space/slot3/status").on("value", function(snapshot) {
+            updateStatus("slot3-status", snapshot.val());
+        });
+
+        // Gate status
+        database.ref("parking_space/gate/status").on("value", function(snapshot) {
+            updateStatus("gate-status", snapshot.val());
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkBuddy Slot Status with Clear Reservation</title>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-database.js"></script>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <style>
+        body {
+            background-color: #191919;
+        }
+        .status-box {
+            padding: 10px;
+            color: white;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .status-box.occupied { background-color: #e74c3c; }
+        .status-box.free { background-color: #2ecc71; }
+        .status-box.reserved { background-color: #3498db; }
+        .status-box.parked { background-color: #f39c12; }
+        .status-box.closed { background-color: #95a5a6; }
+        button, .status-box, .slot, .gate {
+            transition: 500ms;
+        }
+        button:hover, .slot:hover, .gate:hover {
+            transform: scale(1.02);
+            opacity: 0.8;
+        }
+        .status-box:hover { opacity: 0.8; }
+        .slot:hover, .gate:hover { border-radius: 15px; }
+        /* Modal styling */
+        #modal-overlay, #cancel-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 flex items-center justify-center min-h-screen p-4">
+
+    <div class="container bg-gray-800 p-4 sm:p-8 rounded-lg shadow-lg w-full max-w-screen-lg">
+        <h1 class="text-white text-2xl sm:text-3xl text-center font-bold mb-6">ParkBuddy Admin</h1>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <!-- Slot 1 -->
+            <div class="slot bg-gray-700 p-4 rounded-lg text-center">
+                <h2 class="text-xl text-white mb-4">Slot 1</h2>
+                <div id="slot1-status" class="status-box mb-4">Loading...</div>
+                <!-- <button id="slot1-reserve-btn" class="bg-blue-500 text-white py-2 px-4 rounded-md w-full mb-2">Reserve Slot</button> -->
+                <button id="slot1-cancel-btn" class="bg-red-500 text-white py-2 px-4 rounded-md w-full" style="display: none;">Cancel Reservation</button>
+                <button id="slot1-clear-btn" class="bg-yellow-500 text-white py-2 px-4 rounded-md w-full">Clear Reservation</button> <!-- Clear Reservation Button -->
+            </div>
+            <!-- Slot 2 -->
+            <div class="slot bg-gray-700 p-4 rounded-lg text-center">
+                <h2 class="text-xl text-white mb-4">Slot 2</h2>
+                <div id="slot2-status" class="status-box mb-4">Loading...</div>
+                <!-- <button id="slot2-reserve-btn" class="bg-blue-500 text-white py-2 px-4 rounded-md w-full mb-2">Reserve Slot</button> -->
+                <button id="slot2-cancel-btn" class="bg-red-500 text-white py-2 px-4 rounded-md w-full" style="display: none;">Cancel Reservation</button>
+                <button id="slot2-clear-btn" class="bg-yellow-500 text-white py-2 px-4 rounded-md w-full">Clear Reservation</button> <!-- Clear Reservation Button -->
+            </div>
+            <!-- Slot 3 -->
+            <div class="slot bg-gray-700 p-4 rounded-lg text-center">
+                <h2 class="text-xl text-white mb-4">Slot 3</h2>
+                <div id="slot3-status" class="status-box mb-4">Loading...</div>
+                <!-- <button id="slot3-reserve-btn" class="bg-blue-500 text-white py-2 px-4 rounded-md w-full mb-2">Reserve Slot</button> -->
+                <button id="slot3-cancel-btn" class="bg-red-500 text-white py-2 px-4 rounded-md w-full" style="display: none;">Cancel Reservation</button>
+                <button id="slot3-clear-btn" class="bg-yellow-500 text-white py-2 px-4 rounded-md w-full">Clear Reservation</button> <!-- Clear Reservation Button -->
+            </div>
+            <!-- Gate Status
+            <div class="gate bg-gray-700 p-4 rounded-lg text-center">
+                <h2 class="text-xl text-white mb-4">Gate</h2>
+                <div id="gate-status" class="status-box">Loading...</div>
+            </div> -->
+        </div>
+    </div>
+
+    <script>
+        // Firebase configuration
+        var firebaseConfig = {
+            apiKey: "AIzaSyAKwQcf9dQcRsRCj43MPBod1GBXz4xvtJ8",
+            authDomain: "parkbuddy-653a1.firebaseapp.com",
+            databaseURL: "https://parkbuddy-653a1-default-rtdb.firebaseio.com",
+            projectId: "parkbuddy-653a1",
+            storageBucket: "parkbuddy-653a1.appspot.com",
+            messagingSenderId: "171935755007",
+            appId: "YOUR_APP_ID"
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Update slot availability based on status
+        function updateSlotAvailability(slotId, status) {
+            const statusBox = document.getElementById(`${slotId}-status`);
+            const reserveBtn = document.getElementById(`${slotId}-reserve-btn`);
+            const cancelBtn = document.getElementById(`${slotId}-cancel-btn`);
+            const clearBtn = document.getElementById(`${slotId}-clear-btn`); // Clear button reference
+
+            statusBox.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            statusBox.className = `status-box ${status.toLowerCase()}`;
+
+            // Check status and adjust button visibility
+            if (status === "reserved" || status === "occupied" || status === "parked") {
+                reserveBtn.disabled = true;
+                cancelBtn.style.display = status === "reserved" ? "inline-block" : "none";
+                clearBtn.style.display = "inline-block"; // Show clear button
+            } else {
+                reserveBtn.disabled = false;
+                reserveBtn.style.display = "inline-block";
+                cancelBtn.style.display = "none";
+                clearBtn.style.display = "none"; // Hide clear button
+            }
+        }
+
+        // Fetch the slots and gate status
+        ["slot1", "slot2", "slot3"].forEach(slot => {
+            database.ref(`parking_space/${slot}/status`).on("value", function(snapshot) {
+                updateSlotAvailability(slot, snapshot.val());
+            });
+        });
+
+        database.ref("parking_space/gate/status").on("value", function(snapshot) {
+            document.getElementById('gate-status').textContent = snapshot.val();
+            document.getElementById('gate-status').className = `status-box ${snapshot.val().toLowerCase()}`;
+        });
+
+        // Clear reservation function
+        function clearReservation(slotId) {
+            const reservationRef = database.ref(`parking_space/${slotId}/reservation`);
+
+            // Delete all reservation details except for the status
+            reservationRef.once('value').then(snapshot => {
+                const reservationData = snapshot.val();
+
+                if (reservationData) {
+                    // Create a new object with only the status field
+                    const updatedReservation = {
+                        status: 'free' // Update status to 'free'
+                    };
+
+                    // Update the reservation with the new object
+                    reservationRef.set(updatedReservation).then(() => {
+                        updateSlotAvailability(slotId, 'free'); // Update the UI accordingly
+                    }).catch(error => {
+                        console.error("Error updating reservation status:", error);
+                    });
+                } else {
+                    console.log("No reservation found for this slot.");
+                }
+            }).catch(error => {
+                console.error("Error fetching reservation data:", error);
+            });
+        }
+
+        // Add event listeners for clear buttons
+        document.querySelectorAll('[id$="-clear-btn"]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const slotId = this.id.replace('-clear-btn', '');
+                clearReservation(slotId);
+            });
+        });
+    </script>
+</body>
+</html>

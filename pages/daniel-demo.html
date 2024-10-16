@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ParkBuddy Slot Status</title>
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.1/firebase-database.js"></script>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <!-- Add this in the <head> section of your HTML to include Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #191919;
+        }
+        .status-box {
+            padding: 10px;
+            color: white;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .status-box.occupied { background-color: #e74c3c; }
+        .status-box.free { background-color: #2ecc71; }
+        .status-box.reserved { background-color: #3498db; }
+        .status-box.parked { background-color: #f39c12; }
+        .status-box.closed { background-color: #95a5a6; }
+        button, .status-box, .slot, .gate {
+            transition: 500ms;
+        }
+        button:hover, .slot:hover, .gate:hover {
+            transform: scale(1.02);
+            opacity: 0.8;
+        }
+        .status-box:hover { opacity: 0.8; }
+        .slot:hover, .gate:hover { border-radius: 15px; }
+        /* Modal styling */
+        #modal-overlay, #cancel-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 flex items-center justify-center min-h-screen p-4">
+
+    <div class="container bg-gray-800 p-4 sm:p-8 rounded-lg shadow-lg w-full max-w-screen-lg">
+        <h1 class="text-white text-2xl sm:text-3xl text-center font-bold mb-6">ParkBuddy🚗 Slot & Gate Status</h1>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <!-- Slot 1 -->
+            <div class="slot bg-gray-700 p-4 rounded-lg text-center">
+                <h2 class="text-xl text-white mb-4">Slot 1</h2>
+                <div id="slot1-status" class="status-box mb-4">Loading...</div>
+                <button id="slot1-reserve-btn" class="bg-blue-500 text-white py-2 px-4 rounded-md w-full mb-2">Reserve Slot</button>
+                <button id="slot1-cancel-btn" class="bg-red-500 text-white py-2 px-4 rounded-md w-full" style="display: none;">Cancel Reservation</button>
+            </div>
+            <!-- Slot 2 -->
+            <div class="slot bg-gray-700 p-4 rounded-lg text-center">
+                <h2 class="text-xl text-white mb-4">Slot 2</h2>
+                <div id="slot2-status" class="status-box mb-4">Loading...</div>
+                <button id="slot2-reserve-btn" class="bg-blue-500 text-white py-2 px-4 rounded-md w-full mb-2">Reserve Slot</button>
+                <button id="slot2-cancel-btn" class="bg-red-500 text-white py-2 px-4 rounded-md w-full" style="display: none;">Cancel Reservation</button>
+            </div>
+            <!-- Slot 3 -->
+            <div class="slot bg-gray-700 p-4 rounded-lg text-center">
+                <h2 class="text-xl text-white mb-4">Slot 3</h2>
+                <div id="slot3-status" class="status-box mb-4">Loading...</div>
+                <button id="slot3-reserve-btn" class="bg-blue-500 text-white py-2 px-4 rounded-md w-full mb-2">Reserve Slot</button>
+                <button id="slot3-cancel-btn" class="bg-red-500 text-white py-2 px-4 rounded-md w-full" style="display: none;">Cancel Reservation</button>
+            </div>
+            <!-- Gate Status -->
+            <div class="gate bg-gray-700 p-4 rounded-lg text-center">
+                <h2 class="text-xl text-white mb-4">Gate</h2>
+                <div id="gate-status" class="status-box">Loading...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Overlay for Reservation -->
+    <div id="modal-overlay" class="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50 hidden">
+        <div id="reservation-modal" class="bg-gray-800 rounded-lg p-6 relative w-full max-w-md">
+            <button id="close-modal-btn" class="absolute top-2 right-2 text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <h2 class="text-xl text-white mb-4">Reservation Details</h2>
+            <form id="user-details-form" class="space-y-4">
+                <input type="text" id="user-name" placeholder="Your Name" required class="w-full p-2 rounded-md bg-gray-700 text-white">
+                <input type="tel" id="user-phone" placeholder="Phone Number" required class="w-full p-2 rounded-md bg-gray-700 text-white">
+                <input type="email" id="user-email" placeholder="Email Address" required class="w-full p-2 rounded-md bg-gray-700 text-white">
+                <input type="text" id="user-plate" placeholder="Number Plate" required class="w-full p-2 rounded-md bg-gray-700 text-white">
+                <input type="date" id="reservation-date" required class="w-full p-2 rounded-md bg-gray-700 text-white">
+                <input type="time" id="reservation-time" required class="w-full p-2 rounded-md bg-gray-700 text-white">
+                <button type="submit" class="bg-green-500 text-white py-2 px-4 rounded-md w-full">Confirm Reservation</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Overlay for Cancellation Confirmation -->
+    <div id="cancel-overlay" class="fixed top-0 left-0 w-full h-full flex items-center justify-center z-50 hidden">
+        <div id="cancel-modal" class="bg-gray-800 rounded-lg p-6 relative w-full max-w-md">
+            <button id="close-cancel-modal-btn" class="absolute top-2 right-2 text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <h2 class="text-xl text-white mb-4">Cancel Reservation</h2>
+            <form id="cancel-details-form" class="space-y-4">
+                <input type="text" id="cancel-name" placeholder="Your Name" required class="w-full p-2 rounded-md bg-gray-700 text-white">
+                <input type="email" id="cancel-email" placeholder="Email Address" required class="w-full p-2 rounded-md bg-gray-700 text-white">
+                <button type="submit" class="bg-red-500 text-white py-2 px-4 rounded-md w-full">Confirm Cancellation</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add this for toast notifications -->
+    <div id="toast" class="fixed bottom-5 right-5 p-4 rounded-md text-white hidden"></div>
+
+    <script>
+        // Firebase configuration
+        var firebaseConfig = {
+            apiKey: "AIzaSyAKwQcf9dQcRsRCj43MPBod1GBXz4xvtJ8",
+            authDomain: "parkbuddy-653a1.firebaseapp.com",
+            databaseURL: "https://parkbuddy-653a1-default-rtdb.firebaseio.com",
+            projectId: "parkbuddy-653a1",
+            storageBucket: "parkbuddy-653a1.appspot.com",
+            messagingSenderId: "171935755007",
+            appId: "YOUR_APP_ID"
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        function updateSlotAvailability(slotId, status) {
+            const statusBox = document.getElementById(`${slotId}-status`);
+            const reserveBtn = document.getElementById(`${slotId}-reserve-btn`);
+            const cancelBtn = document.getElementById(`${slotId}-cancel-btn`);
+
+            statusBox.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+            statusBox.className = `status-box ${status.toLowerCase()}`;
+
+            if (status === "free") {
+                reserveBtn.disabled = false;
+                reserveBtn.style.display = "inline-block";
+                cancelBtn.style.display = "none";
+            } else if (status === "reserved") {
+                reserveBtn.style.display = "none";
+                cancelBtn.style.display = "inline-block";
+            } else if (status === "parked") {
+                reserveBtn.disabled = true;
+                reserveBtn.style.display = "inline-block";
+                cancelBtn.style.display = "none";
+            }
+        }
+
+        // Fetch the slots and gate status
+        ["slot1", "slot2", "slot3"].forEach(slot => {
+            database.ref(`parking_space/${slot}/status`).on("value", function(snapshot) {
+                updateSlotAvailability(slot, snapshot.val());
+            });
+        });
+
+        database.ref("parking_space/gate/status").on("value", function(snapshot) {
+            document.getElementById('gate-status').textContent = snapshot.val();
+            document.getElementById('gate-status').className = `status-box ${snapshot.val().toLowerCase()}`;
+        });
+
+        // Modal for reservation
+        const reservationModal = document.getElementById('modal-overlay');
+        const cancelModal = document.getElementById('cancel-overlay');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const closeCancelModalBtn = document.getElementById('close-cancel-modal-btn');
+
+        document.querySelectorAll('[id$="-reserve-btn"]').forEach(button => {
+            button.addEventListener('click', function() {
+                const slotId = this.id.replace('-reserve-btn', '');
+                const status = document.getElementById(`${slotId}-status`).textContent.toLowerCase();
+                
+                if (status === "free") {
+                    reservationModal.classList.remove('hidden');
+                    reservationModal.setAttribute('data-slot', slotId);
+                } else if (status === "parked") {
+                    showToast('This slot is currently parked and cannot be reserved', 'bg-red-500');
+                }
+            });
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            reservationModal.classList.add('hidden');
+        });
+
+        closeCancelModalBtn.addEventListener('click', () => {
+            cancelModal.classList.add('hidden');
+        });
+
+        document.getElementById('user-details-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const slotId = reservationModal.getAttribute('data-slot');
+            const userName = document.getElementById('user-name').value;
+            const userPhone = document.getElementById('user-phone').value;
+            const userEmail = document.getElementById('user-email').value;
+            const userPlate = document.getElementById('user-plate').value;
+            const reservationDate = document.getElementById('reservation-date').value;
+            const reservationTime = document.getElementById('reservation-time').value;
+
+            // Set the status to 'reserved' in Firebase
+            database.ref(`parking_space/${slotId}`).set({
+                status: 'reserved',
+                user: {
+                    name: userName,
+                    phone: userPhone,
+                    email: userEmail,
+                    plate: userPlate,
+                    date: reservationDate,
+                    time: reservationTime
+                }
+            }).then(() => {
+                updateSlotAvailability(slotId, 'reserved');
+                reservationModal.classList.add('hidden');
+            }).catch(error => {
+                console.error("Error reserving slot:", error);
+            });
+        });
+
+        document.querySelectorAll('[id$="-cancel-btn"]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                cancelModal.classList.remove('hidden');
+                const slotId = this.id.replace('-cancel-btn', '');
+                cancelModal.setAttribute('data-slot', slotId);
+            });
+        });
+
+        document.getElementById('cancel-details-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const slotId = cancelModal.getAttribute('data-slot');
+            const cancelName = document.getElementById('cancel-name').value;
+            const cancelEmail = document.getElementById('cancel-email').value;
+
+            // Verify cancellation details and remove the reservation
+            database.ref(`parking_space/${slotId}/user`).once('value').then(snapshot => {
+                const userData = snapshot.val();
+                if (userData && userData.name === cancelName && userData.email === cancelEmail) {
+                    // Set the status back to free
+                    database.ref(`parking_space/${slotId}`).set({
+                        status: 'free'
+                    }).then(() => {
+                        updateSlotAvailability(slotId, 'free');
+                        cancelModal.classList.add('hidden');
+                        showToast('Reservation cancelled successfully', 'bg-green-500');
+                    }).catch(error => {
+                        console.error("Error cancelling reservation:", error);
+                        showToast('Error cancelling reservation', 'bg-red-500');
+                    });
+                } else {
+                    showToast('Cancellation details do not match', 'bg-red-500');
+                }
+            }).catch(error => {
+                console.error("Error verifying cancellation:", error);
+                showToast('Error verifying cancellation', 'bg-red-500');
+            });
+        });
+
+        // Function to show toast notifications
+        function showToast(message, bgColor) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `fixed bottom-5 right-5 p-4 rounded-md text-white ${bgColor}`;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Function to update gate status and icon
+        function updateGateStatus(status) {
+            const gateStatus = document.getElementById('gate-status');
+            const gateIcon = document.getElementById('gate-icon');
+            const gateStatusText = document.getElementById('gate-status-text');
+
+            if (status === 'open') {
+                gateStatus.className = 'p-4 rounded-full bg-green-500 text-white';
+                gateIcon.className = 'fa-solid fa-door-open fa-4x';
+                gateStatusText.textContent = 'Gate Open';
+                gateStatusText.className = 'mt-2 text-lg font-semibold text-green-600';
+            } else {
+                gateStatus.className = 'p-4 rounded-full bg-red-500 text-white';
+                gateIcon.className = 'fa-solid fa-door-closed fa-4x';
+                gateStatusText.textContent = 'Gate Closed';
+                gateStatusText.className = 'mt-2 text-lg font-semibold text-red-600';
+            }
+        }
+
+        // Listen for gate status changes
+        database.ref('gate_status').on('value', snapshot => {
+            const status = snapshot.val();
+            updateGateStatus(status);
+        });
+
+        // Function to toggle gate status (for testing purposes)
+        function toggleGate() {
+            database.ref('gate_status').once('value').then(snapshot => {
+                const currentStatus = snapshot.val();
+                const newStatus = currentStatus === 'open' ? 'closed' : 'open';
+                database.ref('gate_status').set(newStatus);
+            });
+        }
+    </script>
+</body>
+</html>
