@@ -1,6 +1,8 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266Firebase.h>
 #include <Servo.h>
+#include <LiquidCrystal_I2C.h> // Library for LCD
+LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 16, 2);
 
 // Wi-Fi configuration
 #define _SSID "Pixel 7a"       // Your WiFi SSID
@@ -10,9 +12,9 @@
 #define REFERENCE_URL "https://parkbuddy-653a1-default-rtdb.firebaseio.com"
 
 // Define pin numbers
-#define GATE_IR_PIN D1    // Gate IR sensor connected to D1
+#define GATE_IR_PIN D6    // Gate IR sensor connected to D1
 #define SERVO_PIN D0      // Servo motor connected to D0
-#define SLOT1_IR_PIN D2   // Parking spot 1 IR sensor connected to D2
+#define SLOT1_IR_PIN D5   // Parking spot 1 IR sensor connected to D2
 #define SLOT2_IR_PIN D3   // Parking spot 2 IR sensor connected to D3
 #define SLOT3_IR_PIN D7   // Parking spot 3 IR sensor connected to D7
 
@@ -23,11 +25,24 @@ Servo gateServo;
 void setup() {
   Serial.begin(115200);
 
+  // Initialize the LCD
+  lcd.init();           // Initialize the LCD
+  lcd.backlight();      // Turn on the backlight
+  lcd.clear();
+    
   // Initialize Wi-Fi connection
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
   delay(1000);
   Serial.print("Connecting to: ");
+
+  // Display the status on two lines
+  lcd.setCursor(0, 0); 
+  lcd.print("Connecting to: ");
+  
+  lcd.setCursor(0, 1); 
+  lcd.print(_SSID);
+  
   Serial.println(_SSID);
   WiFi.begin(_SSID, _PASSWORD);
 
@@ -35,6 +50,10 @@ void setup() {
     delay(2000);
     Serial.print(".");
   }
+
+  lcd.clear();
+  lcd.setCursor(0, 0); 
+  lcd.print("Connected!");
 
   Serial.println("WiFi Connected: ");
   Serial.println(_SSID);
@@ -92,6 +111,8 @@ void checkSlots() {
   updateSlotStatus(1, isSlot1Occupied);  // Update Slot 1 status
   updateSlotStatus(2, isSlot2Occupied);  // Update Slot 2 status
   updateSlotStatus(3, isSlot3Occupied);  // Update Slot 3 status
+//  displayStatus(isSlot1Occupied, isSlot2Occupied, isSlot3Occupied);
+  displayFirebaseStatus();
   Serial.println("--------------"); 
 }
 
@@ -118,3 +139,62 @@ void checkGate() {
     firebase.setString("parking_space/gate/status", "Gate closed");
   }
 }
+
+// Function to display reservation status on the LCD
+void displayFirebaseStatus() {
+ 
+  // Fetch data from Firebase
+  String slot1Status = firebase.getString("parking_space/slot1/reservation/status");
+  String slot2Status = firebase.getString("parking_space/slot2/reservation/status");
+  String slot3Status = firebase.getString("parking_space/slot3/reservation/status");
+
+  // Create strings for Free and Reserved slots
+  String freeSlots = "";
+  String reservedSlots = "";
+
+  // Check each slot status and categorize them
+  if (slot1Status == "free") freeSlots += "S1 ";
+  else reservedSlots += "S1 ";
+  
+  if (slot2Status == "free") freeSlots += "S2 ";
+  else reservedSlots += "S2 ";
+  
+  if (slot3Status == "free") freeSlots += "S3 ";
+  else reservedSlots += "S3 ";
+  
+  lcd.clear();
+  // Display the status on two lines
+  lcd.setCursor(0, 0); // Free slots on line 1
+  lcd.print("Free: " + freeSlots);
+  
+  lcd.setCursor(0, 1); // Reserved slots on line 2
+  lcd.print("Booked: " + reservedSlots);
+}
+
+
+// Add a small delay to avoid frequent refreshes}
+//
+//// Function to display parking slot status on the LCD
+//void displayStatus(bool slot1, bool slot2, bool slot3) {
+//  lcd.clear();
+//  
+//  // Create strings for Free and Parked slots
+//  String freeSlots = "";
+//  String parkedSlots = "";
+//
+//  if (!slot1) freeSlots += "S1 ";
+//  else parkedSlots += "S1 ";
+//  
+//  if (!slot2) freeSlots += "S2 ";
+//  else parkedSlots += "S2 ";
+//  
+//  if (!slot3) freeSlots += "S3 ";
+//  else parkedSlots += "S3 ";
+//
+//  // Display the status on two lines
+//  lcd.setCursor(0, 0);
+//  lcd.print("Free: " + freeSlots);
+//  
+//  lcd.setCursor(0, 1);
+//  lcd.print("Parked: " + parkedSlots);
+//}
