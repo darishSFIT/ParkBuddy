@@ -5,8 +5,8 @@
 LiquidCrystal_I2C lcd = LiquidCrystal_I2C(0x27, 16, 2);
 
 // Wi-Fi configuration
-#define _SSID "Pixel 7a"       // Your WiFi SSID
-#define _PASSWORD "87654321"   // Your WiFi Password
+#define _SSID "vivobook16x"       // Your WiFi SSID
+#define _PASSWORD "87654321"      // Your WiFi Password
 
 // Firebase configuration
 #define REFERENCE_URL "https://parkbuddy-653a1-default-rtdb.firebaseio.com"
@@ -111,7 +111,6 @@ void checkSlots() {
   updateSlotStatus(1, isSlot1Occupied);  // Update Slot 1 status
   updateSlotStatus(2, isSlot2Occupied);  // Update Slot 2 status
   updateSlotStatus(3, isSlot3Occupied);  // Update Slot 3 status
-//  displayStatus(isSlot1Occupied, isSlot2Occupied, isSlot3Occupied);
   displayFirebaseStatus();
   Serial.println("--------------"); 
 }
@@ -145,9 +144,14 @@ void displayFirebaseStatus() {
  
   // Fetch data from Firebase
   String slot1Status = firebase.getString("parking_space/slot1/reservation/status");
-  String slot2Status = firebase.getString("parking_space/slot2/reservation/status");
-  String slot3Status = firebase.getString("parking_space/slot3/reservation/status");
+  Serial.println("Slot 1 Reservation: " + slot1Status);
 
+  String slot2Status = firebase.getString("parking_space/slot2/reservation/status");
+  Serial.println("Slot 2 Reservation: " + slot2Status);
+
+  String slot3Status = firebase.getString("parking_space/slot3/reservation/status");
+  Serial.println("Slot 3 Reservation: " + slot3Status);
+  
   // Create strings for Free and Reserved slots
   String freeSlots = "";
   String reservedSlots = "";
@@ -170,31 +174,3 @@ void displayFirebaseStatus() {
   lcd.setCursor(0, 1); // Reserved slots on line 2
   lcd.print("Booked: " + reservedSlots);
 }
-
-
-// Add a small delay to avoid frequent refreshes}
-//
-//// Function to display parking slot status on the LCD
-//void displayStatus(bool slot1, bool slot2, bool slot3) {
-//  lcd.clear();
-//  
-//  // Create strings for Free and Parked slots
-//  String freeSlots = "";
-//  String parkedSlots = "";
-//
-//  if (!slot1) freeSlots += "S1 ";
-//  else parkedSlots += "S1 ";
-//  
-//  if (!slot2) freeSlots += "S2 ";
-//  else parkedSlots += "S2 ";
-//  
-//  if (!slot3) freeSlots += "S3 ";
-//  else parkedSlots += "S3 ";
-//
-//  // Display the status on two lines
-//  lcd.setCursor(0, 0);
-//  lcd.print("Free: " + freeSlots);
-//  
-//  lcd.setCursor(0, 1);
-//  lcd.print("Parked: " + parkedSlots);
-//}
